@@ -1,0 +1,803 @@
+import { CostData, Incident, Member, QueueData, BuffetItem, CashierRating, CashierRatingStats, ParkingSlot } from '../types';
+
+export const INITIAL_INCIDENTS: Incident[] = [
+  {
+    id: 'INC-101',
+    tableId: 'โต๊ะ 14',
+    issueType: 'ลูกค้าเรียกซ้ำเกิน 2 ครั้ง',
+    severityLevel: 'Level 2',
+    detail: 'ลูกค้ากดกริ่งเรียก 3 ครั้ง ขอกระทะใหม่เนื่องจากกระทะเดิมเริ่มไหม้ แต่พนักงานกำลังติดเสิร์ฟโต๊ะใหญ่',
+    responsible: 'หัวหน้ากะบอย',
+    status: 'Escalated',
+    timestamp: '17:42 น.',
+    repeatCalls: 3,
+    n8nDispatched: true,
+    lineCouponSent: true,
+    apologyScript:
+      '(หัวหน้ากะเข้าพบลูกค้า): "ขออภัยคุณลูกค้าโต๊ะ 14 เป็นอย่างยิ่งเลยนะคะ/ครับที่ทำให้ต้องรอนานและเรียกซ้ำ ทางร้านกำลังเร่งเปลี่ยนกระทะให้เดี๋ยวนี้เลยค่ะ ขออนุญาตมอบชีสดิปฟรีและคูปองส่วนลดพิเศษผ่าน LINE OA สำหรับรอบหน้านะคะ"',
+    serviceRecovery:
+      'เปลี่ยนเตาและกระทะใหม่ทันที + ฟรีชีสดิปมื้อนี้ + ยิงคูปองส่วนลด 50 บาทเข้า LINE OA อัตโนมัติ',
+    n8nPayload: {
+      table_id: 'โต๊ะ 14',
+      issue_type: 'ลูกค้าเรียกซ้ำเกิน 2 ครั้ง',
+      severity_level: 'Level 2',
+      timestamp: '2026-09-23T17:42:15.000Z',
+      action_required: 'ส่งคูปองส่วนลดอัตโนมัติผ่าน LINE OA ทันที',
+    },
+  },
+  {
+    id: 'INC-102',
+    tableId: 'โต๊ะ 05',
+    issueType: 'ความปลอดภัยอาหาร',
+    severityLevel: 'Level 1',
+    detail: 'ลูกค้าพบสิ่งแปลกปลอม (เศษฝอยขัดหม้อ) ในถาดหมักหมูงา',
+    responsible: 'ผู้จัดการนุ่น',
+    status: 'Escalated',
+    timestamp: '17:15 น.',
+    repeatCalls: 1,
+    n8nDispatched: false,
+    lineCouponSent: false,
+    apologyScript:
+      '(ผู้จัดการนุ่นเข้าพบลูกค้าทันที): "กราบขออภัยคุณลูกค้าอย่างสูงยิ่งนะคะ ทางร้านให้ความสำคัญสูงสุดกับความสะอาด ทางเราขอนำถาดนี้ไปตรวจสอบทันที พร้อมเปลี่ยนเซตอาหารใหม่ทั้งโต๊ะ และขอดูแลมื้อนี้ให้คุณลูกค้าฟรีเป็นกรณีพิเศษค่ะ"',
+    serviceRecovery:
+      'ยกเว้นค่าอาหารทั้งโต๊ะทันที + มอบบัตรรับประทานฟรีครั้งหน้า + ตรวจสอบอุปกรณ์ครัวล้างจานด่วน',
+    n8nPayload: null,
+  },
+  {
+    id: 'INC-103',
+    tableId: 'โต๊ะ 22',
+    issueType: 'วัตถุดิบหมด',
+    severityLevel: 'Level 3',
+    detail: 'สามชั้นสไลด์ในตู้แช่หมดชั่วคราว ลูกค้านักศึกษาแพทย์รอเติม',
+    responsible: 'หัวหน้ากะแนน (ครัวเตรียม)',
+    status: 'Resolved',
+    timestamp: '16:50 น.',
+    repeatCalls: 1,
+    n8nDispatched: false,
+    lineCouponSent: false,
+    apologyScript:
+      '"ขออภัยในความไม่สะดวกด้วยนะคะคุณลูกค้า ทางครัวกำลังสไลด์สามชั้นสดใหม่ลงตู้แช่ภายใน 2 นาทีนี้ค่ะ"',
+    serviceRecovery: 'ยกจานพิเศษมาเสิร์ฟให้ที่โต๊ะทันทีโดยไม่ต้องเดินไปตัก',
+    n8nPayload: null,
+  },
+];
+
+export const INITIAL_COST_DATA: CostData = {
+  todaySales: 22350, // 150 pax * 149
+  todayIngredientsCost: 7150,
+  foodCostPercent: 32.0,
+  isFoodCostHigh: false,
+  currentPorkPrice: 72, // Baht/kg
+  prevPorkPrice: 68,
+  porkDiffPercent: 5.9,
+  isPorkPriceSurged: true,
+  fixedCostDaily: 4500, // ค่าเช่า, ค่าแรงพนักงาน, ค่าไฟ, ค่าน้ำ
+  variableCostPerHead: 75,
+  breakEvenHeads: 61,
+  currentHeads: 150,
+};
+
+export const INITIAL_QUEUE_DATA: QueueData = {
+  waitingTables: 6,
+  openTablesPerRound: 2,
+  turnoverTime: 45,
+  estimatedWaitTime: 135,
+  shouldStopWalkIn: true,
+  tickets: [
+    {
+      id: 'Q-01',
+      ticketNo: 'A12',
+      customerName: 'นศ.พ. ธนกฤต (มช.)',
+      pax: 4,
+      phone: '089-123-4567',
+      category: 'Student',
+      status: 'Waiting',
+      createdAt: '17:35 น.',
+      estimatedWaitMin: 20,
+    },
+    {
+      id: 'Q-02',
+      ticketNo: 'A13',
+      customerName: 'พยาบาลสุภาพร (สวนดอก)',
+      pax: 2,
+      phone: '081-987-6543',
+      category: 'MedicalStaff',
+      status: 'Waiting',
+      createdAt: '17:40 น.',
+      estimatedWaitMin: 35,
+    },
+    {
+      id: 'Q-03',
+      ticketNo: 'A14',
+      customerName: 'กลุ่มคุณวิชัย',
+      pax: 6,
+      phone: '084-555-8899',
+      category: 'Normal',
+      status: 'Waiting',
+      createdAt: '17:45 น.',
+      estimatedWaitMin: 50,
+    },
+  ],
+};
+
+export const INITIAL_MEMBERS: Member[] = [
+  {
+    id: 'MEM-001',
+    name: 'นศ.พ. ธนกฤต แสงอรุณ',
+    phone: '089-123-4567',
+    type: 'นักศึกษา มช.',
+    points: 47,
+    totalVisits: 14,
+    lastVisit: 'วันนี้ 17:30 น.',
+    lineId: '@thanakrit_cmu',
+    lineConnected: true,
+    memberCode: 'MMK-78912',
+    coupons: [
+      {
+        id: 'CPN-01',
+        code: 'PORK-T1-8821',
+        title: 'หมูสไลด์พรีเมียม / ชีสดิป 1 ถ้วย (ฟรี)',
+        pointsCost: 10,
+        redeemedAt: '20 ก.ย. 2569',
+        expiresAt: '20 ต.ค. 2569',
+        status: 'active',
+      },
+    ],
+    transactions: [
+      {
+        id: 'TX-101',
+        type: 'earn',
+        points: 6,
+        title: 'สะสมแต้มบุฟเฟต์ 4 ท่าน (ยอด 656.-)',
+        timestamp: 'วันนี้ 17:30 น.',
+        billAmount: 656,
+      },
+      {
+        id: 'TX-102',
+        type: 'bonus',
+        points: 10,
+        title: 'โบนัสแต้มต้อนรับผูกบัญชี LINE OA',
+        timestamp: '15 ก.ย. 2569',
+      },
+    ],
+  },
+  {
+    id: 'MEM-002',
+    name: 'พว. สุภาพร สิทธิโชค (รพ.มหาราช)',
+    phone: '081-987-6543',
+    type: 'บุคลากรทางการแพทย์ (สวนดอก)',
+    points: 18,
+    totalVisits: 6,
+    lastVisit: 'เมื่อวาน 19:10 น.',
+    lineId: '@supaporn_nurse',
+    lineConnected: true,
+    memberCode: 'MMK-65431',
+    coupons: [],
+    transactions: [
+      {
+        id: 'TX-201',
+        type: 'earn',
+        points: 3,
+        title: 'สะสมแต้มบุฟเฟต์ 2 ท่าน (ยอด 356.-)',
+        timestamp: 'เมื่อวาน 19:10 น.',
+        billAmount: 356,
+      },
+      {
+        id: 'TX-202',
+        type: 'bonus',
+        points: 10,
+        title: 'โบนัสแต้มต้อนรับผูกบัญชี LINE OA',
+        timestamp: '18 ก.ย. 2569',
+      },
+    ],
+  },
+  {
+    id: 'MEM-003',
+    name: 'คุณกิตติศักดิ์ พรหมมินทร์',
+    phone: '084-555-8899',
+    type: 'ลูกค้าทั่วไป',
+    points: 33,
+    totalVisits: 9,
+    lastVisit: '3 วันก่อน',
+    lineId: '@kittisak_p',
+    lineConnected: true,
+    memberCode: 'MMK-99081',
+    coupons: [
+      {
+        id: 'CPN-02',
+        code: 'DISC15-9921',
+        title: 'คูปองส่วนลด 15% บิลถัดไปทั้งโต๊ะ',
+        pointsCost: 35,
+        redeemedAt: '12 ก.ย. 2569',
+        expiresAt: '12 ต.ค. 2569',
+        status: 'used',
+      },
+    ],
+    transactions: [
+      {
+        id: 'TX-301',
+        type: 'earn',
+        points: 8,
+        title: 'สะสมแต้มปาร์ตี้ 6 ท่าน (ยอด 894.-)',
+        timestamp: '3 วันก่อน',
+        billAmount: 894,
+      },
+    ],
+  },
+  {
+    id: 'MEM-004',
+    name: 'อ.พญ. นภัสสร (คณะแพทยศาสตร์)',
+    phone: '086-777-1122',
+    type: 'บุคลากรทางการแพทย์ (สวนดอก)',
+    points: 49,
+    totalVisits: 16,
+    lastVisit: 'เมื่อวาน 20:00 น.',
+    lineId: '@dr_napassorn',
+    lineConnected: true,
+    memberCode: 'MMK-11229',
+    coupons: [],
+    transactions: [
+      {
+        id: 'TX-401',
+        type: 'earn',
+        points: 12,
+        title: 'สะสมแต้มบุฟเฟต์ทีมแพทย์ 8 ท่าน (ยอด 1,280.-)',
+        timestamp: 'เมื่อวาน 20:00 น.',
+        billAmount: 1280,
+      },
+    ],
+  },
+];
+
+// Helper calculations
+export function calculateFoodCost(ingredientsCost: number, sales: number) {
+  if (sales <= 0) return { percent: 0, isHigh: false };
+  const percent = Number(((ingredientsCost / sales) * 100).toFixed(1));
+  return {
+    percent,
+    isHigh: percent > 35,
+    formula: `(${ingredientsCost.toLocaleString()} ÷ ${sales.toLocaleString()}) × 100 = ${percent}%`,
+  };
+}
+
+export function calculateBreakEven(fixedCost: number, variableCost: number, pricePerHead: number = 149) {
+  const marginPerHead = pricePerHead - variableCost;
+  if (marginPerHead <= 0) return { heads: 0, formula: 'กำไรส่วนเกินต่อหัวต้องมากกว่า 0' };
+  const heads = Math.ceil(fixedCost / marginPerHead);
+  return {
+    heads,
+    formula: `${fixedCost.toLocaleString()} ÷ (${pricePerHead} − ${variableCost}) = ${heads} หัว`,
+  };
+}
+
+export function calculateQueueWaitTime(waitingTables: number, openTablesPerRound: number, turnoverTime: number = 45) {
+  if (openTablesPerRound <= 0) return { waitTime: 0, shouldStopWalkIn: false, formula: 'จำนวนโต๊ะว่างต้องมากกว่า 0' };
+  const waitTime = Math.round((waitingTables * turnoverTime) / openTablesPerRound);
+  return {
+    waitTime,
+    shouldStopWalkIn: waitTime > 30,
+    formula: `[${waitingTables} โต๊ะ × ${turnoverTime} นาที] ÷ ${openTablesPerRound} โต๊ะว่าง = ${waitTime} นาที`,
+  };
+}
+
+export function calculatePoints(billAmount: number) {
+  const points = Math.floor(billAmount / 100);
+  return {
+    points,
+    formula: `⌊${billAmount.toLocaleString()} ÷ 100⌋ = ${points} แต้ม`,
+  };
+}
+
+export const INITIAL_STOCK_MAP: Record<string, number> = {
+  'pork-collar': 88,
+  'pork-belly': 92,
+  'bacon': 70,
+  'pork-liver': 65,
+  'prawns': 22,
+  'squid': 45,
+  'cheese-dip': 80,
+  'mixed-veggies': 95,
+  'noodles': 85,
+  'suki-sauce': 90,
+  'seafood-sauce': 60,
+  'icecream-dessert': 75,
+};
+
+export const BUFFET_ITEMS: BuffetItem[] = [
+  {
+    id: 'pork-collar',
+    name: 'หมูสันคอสไลด์',
+    enName: 'Sliced Pork Collar',
+    category: 'pork',
+    station: 'ตู้แช่เย็น 01 (บาร์เนื้อหมู)',
+    temp: '❄️ แช่เย็น 2°C',
+    desc: 'ลายไขมันแทรกหินอ่อนสีชมพูสด สไลด์บางพอดีคำ นุ่มละลายในปาก ไม่เหนียว',
+    cookTip: 'ย่างบนเตาแก๊สกระทะร้อน 2-3 นาที หรือลวกในน้ำซุปกระดูกหมู 20 วินาทีจนสุกนุ่ม',
+    badge: 'สไลด์สดใหม่ ⭐',
+    dip: 'น้ำจิ้มสุกี้โบราณเต้าหู้ยี้',
+    stockRemainingPercent: 88,
+  },
+  {
+    id: 'pork-belly',
+    name: 'หมูสามชั้นสไลด์บาง',
+    enName: 'Sliced Pork Belly',
+    category: 'pork',
+    station: 'ตู้แช่เย็น 01 (บาร์เนื้อหมู)',
+    temp: '❄️ แช่เย็น 2°C',
+    desc: 'สามชั้นคัดพิเศษ ชั้นไขมันสลับเนื้อแดง ย่างบนเตาแก๊สกระทะร้อนเกรียมกรอบ หอมกรุ่นสะใจ',
+    cookTip: 'ย่างบนเตาแก๊สปรับไฟกลางให้เกรียมกรอบทั้งสองด้าน อร่อยฟินกรอบนอกนุ่มใน',
+    badge: 'ยอดนิยมอันดับ 1 🔥',
+    dip: 'น้ำจิ้มซีฟู้ดมะนาวแท้ & ชีสดิป',
+    stockRemainingPercent: 72,
+  },
+  {
+    id: 'bacon',
+    name: 'เบคอนสดสไลด์รมควัน',
+    enName: 'Smoked Bacon Slices',
+    category: 'pork',
+    station: 'ตู้แช่เย็น 01 (บาร์เนื้อหมู)',
+    temp: '❄️ แช่เย็น 2°C',
+    desc: 'แผ่นยาวรมควันกลิ่นหอม สไลด์ใหม่สด เติมเต็มบาร์ตลอดเวลา ย่างกรอบหรือต้มซุปฟินมาก',
+    cookTip: 'วางนาบกะทะเตาแก๊ส 1.5 นาทีจนไขมันส่งเสียงฉ่าและเกรียมทอง',
+    badge: 'แนะนำ • หอมรมควัน',
+    dip: 'น้ำจิ้มแจ่วอีสาน',
+    stockRemainingPercent: 65,
+  },
+  {
+    id: 'pork-liver',
+    name: 'ตับหมูสดสไลด์',
+    enName: 'Fresh Pork Liver',
+    category: 'pork',
+    station: 'ตู้แช่เย็น 01 (บาร์เนื้อหมู)',
+    temp: '❄️ แช่เย็น 2°C',
+    desc: 'ตับหมูสดคัดเกรด ล้างสะอาด ไร้กลิ่นคาว ลวกสะดุ้งหวานฉ่ำนุ่มเด้ง',
+    cookTip: 'ลวกสะดุ้งในน้ำซุปเดือด 15-20 วินาที ห้ามลวกนานจะทำให้แข็ง',
+    badge: 'สดใหม่ทุกวัน',
+    dip: 'น้ำจิ้มสุกี้เต้าหู้ยี้โรยงา',
+    stockRemainingPercent: 90,
+  },
+  {
+    id: 'prawns',
+    name: 'กุ้งขาวสดแกะเปลือก',
+    enName: 'Fresh White Shrimps',
+    category: 'seafood',
+    station: 'ตู้แช่เย็น 02 (บาร์ซีฟู้ดสด)',
+    temp: '❄️ น้ำแข็งรอง 0°C',
+    desc: 'กุ้งขาวสดเนื้อแน่นเด้ง แกะเปลือกพร้อมลวก ย่างบนเตาแก๊สกระทะร้อนหวานฉ่ำเต็มคำ',
+    cookTip: 'ย่างหรือลวกจนเนื้อกุ้งเปลี่ยนเป็นสีส้มสด ประมาณ 2 นาที เนื้อจะหวานกรอบ',
+    badge: 'ซีฟู้ดไม่อั้น 🦐',
+    dip: 'น้ำจิ้มซีฟู้ดมะนาวสดแท้',
+    stockRemainingPercent: 54,
+  },
+  {
+    id: 'squid',
+    name: 'ปลาหมึกกรอบ & แมงกะพรุน',
+    enName: 'Crispy Squid & Jellyfish',
+    category: 'seafood',
+    station: 'ตู้แช่เย็น 02 (บาร์ซีฟู้ดสด)',
+    temp: '❄️ น้ำแข็งรอง 0°C',
+    desc: 'เนื้อปลาหมึกขาวสดและแมงกะพรุนกรุบกรอบ เคี้ยวเพลิน เต็มปากเต็มคำ',
+    cookTip: 'ลวกในน้ำซุปเดือด 30 วินาทีเพื่อความกรอบเด้งสูงสุด',
+    badge: 'สดกรอบเด้ง',
+    dip: 'น้ำจิ้มซีฟู้ดพริกมะนาว',
+    stockRemainingPercent: 82,
+  },
+  {
+    id: 'cheese-dip',
+    name: 'มอสซาเรลล่าชีสดิป',
+    enName: 'Mozzarella Cheese Dip',
+    category: 'seafood',
+    station: 'ตู้แช่เย็น 02 (บาร์ซีฟู้ด & ชีส)',
+    temp: '❄️ แช่เย็น 4°C',
+    desc: 'ชีสแท้ถ้วยฟอยล์ อังบนเตาร้อนๆ ละลายเยิ้ม จุ่มหมูสามชั้นยืดสะใจ',
+    cookTip: 'วางถ้วยฟอยล์ขอบเตาแก๊ส 2-3 นาทีจนชีสละลายเยิ้ม ยืดทานได้ทันที',
+    badge: 'ชีสยืดพรีเมียม 🧀',
+    dip: 'จุ่มทานคู่หมูสามชั้นย่าง',
+    stockRemainingPercent: 40,
+  },
+  {
+    id: 'mixed-veggies',
+    name: 'ชุดผักสด & เห็ดเข็มทอง',
+    enName: 'Fresh Vegetables & Enoki',
+    category: 'veggie',
+    station: 'บาร์ผักสดไฮโดรโปนิกส์',
+    temp: '🥬 ละอองหมอกเย็น',
+    desc: 'ผักกาดขาวหวานกรอบ ผักบุ้งสด กะหล่ำปลีฝอย ข้าวโพดหวาน และเห็ดเข็มทอง',
+    cookTip: 'ต้มลงในน้ำซุปหมูกระทะ เพิ่มความหวานกลมกล่อมตามธรรมชาติ',
+    badge: 'ตักได้ไม่อั้น 🥬',
+    dip: 'ต้มในน้ำซุปกระดูกหมู',
+    stockRemainingPercent: 95,
+  },
+  {
+    id: 'noodles',
+    name: 'บะหมี่หยก & วุ้นเส้นเหนียวนุ่ม',
+    enName: 'Jade Noodles & Glass Noodles',
+    category: 'veggie',
+    station: 'บาร์เส้นและคาร์บ',
+    temp: '🍜 สดใหม่ทุกรอบ',
+    desc: 'บะหมี่หยกโรยกระเทียมเจียวหอมกรุ่น และวุ้นเส้นถั่วเขียวแท้เหนียวนุ่มหนึบ',
+    cookTip: 'ลวกวุ้นเส้น 30 วินาที หรือทานบะหมี่หยกคลุกน้ำจิ้มสุกี้ได้ทันที',
+    badge: 'เส้นสดเหนียวนุ่ม 🍜',
+    dip: 'คลุกน้ำจิ้มสุกี้โบราณ',
+    stockRemainingPercent: 85,
+  },
+  {
+    id: 'suki-sauce',
+    name: 'น้ำจิ้มสุกี้มันนี่โบราณเต้าหู้ยี้',
+    enName: 'Signature Suki Sauce',
+    category: 'sauce',
+    station: 'บาร์น้ำจิ้มปรุงสด',
+    temp: '🥣 กวนสดวันต่อวัน',
+    desc: 'สูตรลับประจำร้าน เต้าหู้ยี้หอมงาคั่วเข้มข้น รสชาติหวานมันเค็มเผ็ดกลมกล่อม',
+    cookTip: 'เติมพริกขี้หนูสวนซอย กระเทียมสด และบีบมะนาวเพิ่มความจัดจ้าน',
+    badge: 'สูตรเอกลักษณ์ 👑',
+    dip: 'เติมพริกกระเทียมมะนาวสด',
+    stockRemainingPercent: 92,
+  },
+  {
+    id: 'seafood-sauce',
+    name: 'น้ำจิ้มซีฟู้ดมะนาวสดแท้',
+    enName: 'Spicy Seafood Lime Sauce',
+    category: 'sauce',
+    station: 'บาร์น้ำจิ้มปรุงสด',
+    temp: '🥣 คั้นสดใหม่',
+    desc: 'มะนาวแป้นคั้นสดแท้ 100% พริกขี้หนูสวน แซ่บจี๊ดถึงใจ ตัดเลี่ยนหมูกระทะเด็ดขาด',
+    cookTip: 'เหมาะจิ้มสามชั้นย่างเกรียม และกุ้งขาวสดแกะเปลือกลวก',
+    badge: 'แซ่บจี๊ด 🌶️',
+    dip: 'จิ้มสามชั้นและกุ้งสด',
+    stockRemainingPercent: 68,
+  },
+  {
+    id: 'icecream-dessert',
+    name: 'ไอศกรีมกะทิโบราณ & แตงโมฉ่ำ',
+    enName: 'Coconut Ice Cream & Melon',
+    category: 'dessert',
+    station: 'บาร์ของหวานและผลไม้',
+    temp: '🍨 ตู้แช่แข็ง -18°C',
+    desc: 'ไอศกรีมกะทิสดรสหวานมันเข้มข้น และแตงโมหวานเย็นฉ่ำ สดชื่นปิดท้ายมื้อบุฟเฟต์',
+    cookTip: 'ตักทานปิดท้ายมื้อได้ไม่อั้น รวมอยู่ในบุฟเฟต์ 149.- แล้ว',
+    badge: 'ฟรีในบุฟเฟต์ 149.- 🍨',
+    dip: 'ทานปิดท้ายมื้ออาหาร',
+    stockRemainingPercent: 76,
+  },
+  // --- SEASONAL DROPS (เมนูพิเศษประจำฤดูกาล) ---
+  {
+    id: 'seasonal-mala-pork',
+    name: 'หมูสามชั้นหมักซอสหม่าล่าเชียงใหม่',
+    enName: 'Chiang Mai Mala Marinated Pork Belly',
+    category: 'pork',
+    station: 'บาร์ Seasonal Special',
+    temp: '❄️ แช่เย็น 2°C',
+    desc: 'หมักพริกหม่าล่ายูนนานแท้จากดอยแม่สลอง ชาลิ้น หอมเครื่องเทศ ย่างแล้วกรอบฟินเผ็ดซี้ด',
+    cookTip: 'ย่างจนขอบไหม้เกรียมทอง ความเผ็ดชาจะซึมเข้าเนื้อหมูสุดๆ',
+    badge: '✨ SEASONAL DROP',
+    dip: 'น้ำจิ้มซีฟู้ดมะนาวสด',
+    stockRemainingPercent: 45,
+    isSeasonalDrop: true,
+    seasonalNote: 'เมนูดรอปพิเศษ ประจำฤดูหนาวเชียงใหม่',
+  },
+  {
+    id: 'seasonal-soy-prawns',
+    name: 'กุ้งดองซีอิ๊วเกาหลีสูตรเด็ดมันนี่',
+    enName: 'Korean Soy-Marinated Shrimps',
+    category: 'seafood',
+    station: 'บาร์ Seasonal Special',
+    temp: '❄️ ตู้เย็นจัด 0°C',
+    desc: 'กุ้งสดดองซีอิ๊วเกาหลีเข้มข้น โรยงาขาวและพริกจินดาแดง รสชาติเค็มหวานกลมกล่อม',
+    cookTip: 'ทานสดกับข้าวสวยร้อนๆ หรือนาบกระทะ 10 วินาทีหอมกรุ่น',
+    badge: '✨ SEASONAL DROP',
+    dip: 'น้ำจิ้มซีฟู้ดมะนาวแท้',
+    stockRemainingPercent: 30,
+    isSeasonalDrop: true,
+    seasonalNote: 'จำกัดวันละ 40 ถาดเท่านั้น',
+  },
+  {
+    id: 'seasonal-black-pepper',
+    name: 'สันคอหมูหมักพริกไทยดำกวนอิม',
+    enName: 'Black Pepper Pork Collar',
+    category: 'pork',
+    station: 'บาร์ Seasonal Special',
+    temp: '❄️ แช่เย็น 2°C',
+    desc: 'สันคอสไลด์บางหมักพริกไทยดำแท้บดหยาบ หอมกรุ่นละมุนลิ้น ย่างกระทะร้อนหอมฟุ้งทั้งโต๊ะ',
+    cookTip: 'ย่างไฟแรง 1 นาที รสชาติพริกไทยดำจะส่งกลิ่นหอมชวนน้ำลายสอ',
+    badge: '✨ SEASONAL DROP',
+    dip: 'น้ำจิ้มแจ่วมะขามเปียก',
+    stockRemainingPercent: 60,
+    isSeasonalDrop: true,
+    seasonalNote: 'เมนูแนะนำสำหรับคนรักกลิ่นพริกไทยดำ',
+  },
+  {
+    id: 'seasonal-mango-icecream',
+    name: 'ไอศกรีมมะม่วงน้ำดอกไม้โบราณ',
+    enName: 'Nam Dok Mai Mango Ice Cream',
+    category: 'dessert',
+    station: 'บาร์ของหวาน Seasonal',
+    temp: '🍨 ตู้แช่แข็ง -18°C',
+    desc: 'ไอศกรีมทำจากเนื้อมะม่วงน้ำดอกไม้แท้ หวานอมเปรี้ยวสดชื่น ดับร้อนปิดท้ายมื้อบุฟเฟต์',
+    cookTip: 'ตักใส่ถ้วย ราดด้วยนมข้นหวานหรือทานสดๆ ได้ไม่อั้น',
+    badge: '✨ SEASONAL DROP',
+    dip: 'ทานปิดท้ายมื้ออาหาร',
+    stockRemainingPercent: 50,
+    isSeasonalDrop: true,
+    seasonalNote: 'มะม่วงน้ำดอกไม้คัดเกรดจากเชียงใหม่',
+  },
+  {
+    id: 'seasonal-dip-plara',
+    name: 'น้ำจิ้มแจ่วปลาร้านัวข้าวคั่วโบราณ',
+    enName: 'Signature Roasted Rice & Fermented Fish Dip',
+    category: 'sauce',
+    station: 'บาร์น้ำจิ้ม Seasonal',
+    temp: '🥣 ปรุงสดใหม่',
+    desc: 'น้ำจิ้มแจ่วปลาร้าต้มสุกหอมนัว คั่วข้าวคั่วใหม่ทุกเช้า หอมฟุ้ง แซ่บนัวสะใจสไตล์อีสานแท้',
+    cookTip: 'คนให้เข้ากัน จิ้มหมูสามชั้นย่างและเบคอนฟินถึงขีดสุด',
+    badge: '✨ SEASONAL DROP',
+    dip: 'จิ้มหมูย่างทุกเมนู',
+    stockRemainingPercent: 75,
+    isSeasonalDrop: true,
+    seasonalNote: 'รสแซ่บนัวสูตรพิเศษ',
+  },
+];
+
+// --- PARK EASY @ MONEY (Live Real-Time Parking System Data) ---
+export const INITIAL_PARKING_SLOTS: ParkingSlot[] = [
+  // Zone A (ติดร้าน - เดินใกล้สุด 8-20 เมตร แนะนำเข้าทางประตู 1 ถ.สุเทพ)
+  { id: 'A01', zone: 'Zone A (ติดร้าน)', type: 'car', status: 'occupied', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 8 },
+  { id: 'A02', zone: 'Zone A (ติดร้าน)', type: 'car', status: 'occupied', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 10 },
+  { id: 'A03', zone: 'Zone A (ติดร้าน)', type: 'car', status: 'available', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 12 },
+  { id: 'A04', zone: 'Zone A (ติดร้าน)', type: 'car', status: 'available', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 15 },
+  { id: 'A05', zone: 'Zone A (ติดร้าน)', type: 'car', status: 'occupied', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 18 },
+  { id: 'A06', zone: 'Zone A (ติดร้าน)', type: 'car', status: 'available', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 20 },
+
+  // Zone B (ในร่ม - มีหลังคากันแดดกันฝน แนะนำเข้าทางประตู 1 ถ.สุเทพ)
+  { id: 'B01', zone: 'Zone B (ในร่ม)', type: 'car', status: 'occupied', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 25 },
+  { id: 'B02', zone: 'Zone B (ในร่ม)', type: 'car', status: 'available', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 28 },
+  { id: 'B03', zone: 'Zone B (ในร่ม)', type: 'car', status: 'available', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 30 },
+  { id: 'B04', zone: 'Zone B (ในร่ม)', type: 'car', status: 'occupied', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 32 },
+  { id: 'B05', zone: 'Zone B (ในร่ม)', type: 'car', status: 'available', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 35 },
+  { id: 'B06', zone: 'Zone B (ในร่ม)', type: 'car', status: 'occupied', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 38 },
+  { id: 'B07', zone: 'Zone B (ในร่ม)', type: 'car', status: 'occupied', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 40 },
+  { id: 'B08', zone: 'Zone B (ในร่ม)', type: 'car', status: 'available', recommendedGate: 'ทางเข้า 1 (ถ.สุเทพ)', distanceMeters: 42 },
+
+  // Zone C (ลานหลัก - กว้างขวาง จอดง่าย แนะนำเข้าทางประตู 2 ซอยวัดสวนดอก)
+  { id: 'C01', zone: 'Zone C (ลานหลัก)', type: 'car', status: 'available', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 30 },
+  { id: 'C02', zone: 'Zone C (ลานหลัก)', type: 'car', status: 'occupied', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 32 },
+  { id: 'C03', zone: 'Zone C (ลานหลัก)', type: 'car', status: 'occupied', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 35 },
+  { id: 'C04', zone: 'Zone C (ลานหลัก)', type: 'car', status: 'available', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 38 },
+  { id: 'C05', zone: 'Zone C (ลานหลัก)', type: 'car', status: 'available', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 40 },
+  { id: 'C06', zone: 'Zone C (ลานหลัก)', type: 'car', status: 'occupied', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 43 },
+  { id: 'C07', zone: 'Zone C (ลานหลัก)', type: 'car', status: 'occupied', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 45 },
+  { id: 'C08', zone: 'Zone C (ลานหลัก)', type: 'car', status: 'available', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 48 },
+  { id: 'C09', zone: 'Zone C (ลานหลัก)', type: 'car', status: 'occupied', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 50 },
+  { id: 'C10', zone: 'Zone C (ลานหลัก)', type: 'car', status: 'available', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 52 },
+
+  // Moto Zone (สำหรับมอเตอร์ไซค์ - ติดทางเข้า 2 ซอยวัดสวนดอก)
+  { id: 'M01', zone: 'Moto Zone (มอเตอร์ไซค์)', type: 'motorcycle', status: 'available', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 5 },
+  { id: 'M02', zone: 'Moto Zone (มอเตอร์ไซค์)', type: 'motorcycle', status: 'available', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 6 },
+  { id: 'M03', zone: 'Moto Zone (มอเตอร์ไซค์)', type: 'motorcycle', status: 'occupied', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 7 },
+  { id: 'M04', zone: 'Moto Zone (มอเตอร์ไซค์)', type: 'motorcycle', status: 'occupied', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 8 },
+  { id: 'M05', zone: 'Moto Zone (มอเตอร์ไซค์)', type: 'motorcycle', status: 'available', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 9 },
+  { id: 'M06', zone: 'Moto Zone (มอเตอร์ไซค์)', type: 'motorcycle', status: 'occupied', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 10 },
+  { id: 'M07', zone: 'Moto Zone (มอเตอร์ไซค์)', type: 'motorcycle', status: 'available', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 11 },
+  { id: 'M08', zone: 'Moto Zone (มอเตอร์ไซค์)', type: 'motorcycle', status: 'available', recommendedGate: 'ทางเข้า 2 (ซอยวัดสวนดอก)', distanceMeters: 12 },
+];
+
+export const INITIAL_CASHIER_RATINGS: CashierRating[] = [
+  {
+    id: 'RAT-342',
+    stars: 5,
+    ratingLabel: 'ประทับใจยอดเยี่ยมที่สุด!',
+    categoryRatings: {
+      parking: 5,
+      booking: 5,
+      waiting: 5,
+      service: 5,
+      payment: 5,
+    },
+    tableId: 'โต๊ะ 08',
+    billAmount: 596,
+    cashierStaff: 'แคชเชียร์กวาง',
+    customerName: 'นศ.พ. ธนกฤต แสงอรุณ',
+    phone: '089-123-4567',
+    categoryTags: ['บริการรวดเร็ว', 'พนักงานยิ้มแย้ม', 'น้ำจิ้มเด็ดมาก', 'คุ้มค่า 149.-'],
+    comment: 'น้องพนักงานยิ้มแย้มแนะนำดีมากครับ หมูนุ่มน้ำจิ้มสุกี้เต้าหู้ยี้เด็ดสุดๆ สแกนจ่ายไว ได้แต้ม LINE ทันใจ มาซ้ำประจำแน่นอน',
+    timestamp: 'เมื่อ 10 นาทีที่แล้ว (18:20 น.)',
+    createdAt: '2026-09-25T11:20:00.000Z',
+    bonusPointsAwarded: 1,
+    status: 'normal',
+  },
+  {
+    id: 'RAT-341',
+    stars: 5,
+    ratingLabel: 'ประทับใจยอดเยี่ยมที่สุด!',
+    categoryRatings: {
+      parking: 4,
+      booking: 5,
+      waiting: 5,
+      service: 5,
+      payment: 5,
+    },
+    tableId: 'โต๊ะ 12',
+    billAmount: 356,
+    cashierStaff: 'แคชเชียร์กวาง',
+    customerName: 'พว. สุภาพร สิทธิโชค',
+    phone: '081-987-6543',
+    categoryTags: ['บริการรวดเร็ว', 'เตาแก๊สไฟแรง', 'สะอาดคุ้มค่า'],
+    comment: 'ออกเวรจาก รพ.มหาราช มาทานดึกๆ พนักงานแคชเชียร์บริการไวมาก ตัดแต้มแลกน้ำแข็งฟรีทันที ประทับใจค่ะ',
+    timestamp: 'เมื่อ 25 นาทีที่แล้ว (18:05 น.)',
+    createdAt: '2026-09-25T11:05:00.000Z',
+    bonusPointsAwarded: 1,
+    status: 'normal',
+  },
+  {
+    id: 'RAT-340',
+    stars: 5,
+    ratingLabel: 'ประทับใจยอดเยี่ยมที่สุด!',
+    categoryRatings: {
+      parking: 5,
+      booking: 5,
+      waiting: 5,
+      service: 5,
+      payment: 5,
+    },
+    tableId: 'โต๊ะ 18',
+    billAmount: 894,
+    cashierStaff: 'แคชเชียร์บอย',
+    customerName: 'คุณกิตติศักดิ์ พรหมมินทร์',
+    phone: '084-555-8899',
+    categoryTags: ['หมูสดสะอาด', 'บริการรวดเร็ว', 'คุ้มค่า 149.-'],
+    comment: 'พาเพื่อนมา 6 คน อิ่มคุ้มมาก สแกนบาร์โค้ดสะสมแต้มหน้าจอแคชเชียร์ง่ายและสะดวกมาก ให้ 5 หมูเต็มครับ',
+    timestamp: 'เมื่อ 45 นาทีที่แล้ว (17:45 น.)',
+    createdAt: '2026-09-25T10:45:00.000Z',
+    bonusPointsAwarded: 1,
+    status: 'normal',
+  },
+  {
+    id: 'RAT-339',
+    stars: 4,
+    ratingLabel: 'พึงพอใจมาก',
+    categoryRatings: {
+      parking: 4,
+      booking: 4,
+      waiting: 4,
+      service: 5,
+      payment: 5,
+    },
+    tableId: 'โต๊ะ 04',
+    billAmount: 1280,
+    cashierStaff: 'แคชเชียร์แนน',
+    customerName: 'อ.พญ. นภัสสร',
+    phone: '086-777-1122',
+    categoryTags: ['พนักงานยิ้มแย้ม', 'น้ำจิ้มเด็ดมาก', 'หมูสดสะอาด'],
+    comment: 'อาหารอร่อยมากค่ะ ช่วงหัวค่ำลูกค้าเยอะมาก แต่แคชเชียร์ให้บริการคล่องแคล่วสุภาพมากค่ะ',
+    timestamp: '17:15 น.',
+    createdAt: '2026-09-25T10:15:00.000Z',
+    bonusPointsAwarded: 1,
+    status: 'normal',
+  },
+  {
+    id: 'RAT-338',
+    stars: 5,
+    ratingLabel: 'ประทับใจยอดเยี่ยมที่สุด!',
+    categoryRatings: {
+      parking: 4,
+      booking: 5,
+      waiting: 5,
+      service: 5,
+      payment: 5,
+    },
+    tableId: 'โต๊ะ 21',
+    billAmount: 745,
+    cashierStaff: 'แคชเชียร์บอย',
+    customerName: 'กลุ่ม นศ. วิศวะ มช.',
+    phone: '082-345-6789',
+    categoryTags: ['บริการรวดเร็ว', 'เตาแก๊สไฟแรง', 'คุ้มค่า 149.-'],
+    comment: 'เตาแก๊สปรับไฟง่าย สะอาด ไร้ควันแสบตา จ่ายเงินแคชเชียร์ไวมาก 10/10 ครับ',
+    timestamp: '16:50 น.',
+    createdAt: '2026-09-25T09:50:00.000Z',
+    bonusPointsAwarded: 1,
+    status: 'normal',
+  },
+  {
+    id: 'RAT-337',
+    stars: 4,
+    ratingLabel: 'พึงพอใจมาก',
+    categoryRatings: {
+      parking: 5,
+      booking: 4,
+      waiting: 4,
+      service: 5,
+      payment: 4,
+    },
+    tableId: 'โต๊ะ 15',
+    billAmount: 447,
+    cashierStaff: 'แคชเชียร์กวาง',
+    customerName: 'คุณวิไลวรรณ (คณะทันตแพทย์)',
+    phone: '089-876-5432',
+    categoryTags: ['สะอาดคุ้มค่า', 'พนักงานยิ้มแย้ม', 'บริการรวดเร็ว'],
+    comment: 'บาร์ของสดสะอาด ผักกรอบสด พนักงานแคชเชียร์ทักทายอบอุ่น',
+    timestamp: '16:20 น.',
+    createdAt: '2026-09-25T09:20:00.000Z',
+    bonusPointsAwarded: 1,
+    status: 'normal',
+  },
+  {
+    id: 'RAT-336',
+    stars: 2,
+    ratingLabel: 'ควรปรับปรุงบริการ',
+    categoryRatings: {
+      parking: 3,
+      booking: 3,
+      waiting: 2,
+      service: 2,
+      payment: 4,
+    },
+    tableId: 'โต๊ะ 14',
+    billAmount: 596,
+    cashierStaff: 'แคชเชียร์บอย',
+    customerName: 'คุณเอกชัย',
+    phone: '085-111-2233',
+    categoryTags: ['กระทะไหม้เร็ว', 'เรียกพนักงานยาก'],
+    comment: 'ช่วงพีคคนแน่น เรียกเปลี่ยนกระทะ 3 ครั้งกว่าจะมา แต่หัวหน้ากะบอยมาขอโทษพร้อมมอบชีสดิปฟรีให้ รับฟังคำติชมดีครับ',
+    timestamp: 'เมื่อวาน 20:30 น.',
+    createdAt: '2026-09-24T13:30:00.000Z',
+    bonusPointsAwarded: 1,
+    status: 'urgent_recovery',
+    managerNotified: true,
+  },
+];
+
+export function calculateCashierRatingStats(ratings: CashierRating[]): CashierRatingStats {
+  if (!ratings || ratings.length === 0) {
+    return {
+      averageRating: 5.0,
+      totalRatings: 0,
+      satisfactionRate: 100,
+      starsCount: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+      categoryAverages: {
+        parking: 5.0,
+        booking: 5.0,
+        waiting: 5.0,
+        service: 5.0,
+        payment: 5.0,
+      },
+    };
+  }
+
+  const total = ratings.length;
+  const sum = ratings.reduce((acc, r) => acc + r.stars, 0);
+  const avg = Number((sum / total).toFixed(1));
+
+  const starsCount = {
+    5: ratings.filter((r) => r.stars === 5).length,
+    4: ratings.filter((r) => r.stars === 4).length,
+    3: ratings.filter((r) => r.stars === 3).length,
+    2: ratings.filter((r) => r.stars === 2).length,
+    1: ratings.filter((r) => r.stars === 1).length,
+  };
+
+  // High satisfaction is 4 or 5 stars
+  const highSatisfactionCount = starsCount[5] + starsCount[4];
+  const satisfactionRate = Math.round((highSatisfactionCount / total) * 100);
+
+  // Category averages (การจอดรถ, การจองคิว, การรอคิว, บริการภายในร้าน, การชำระเงิน)
+  const parkingSum = ratings.reduce((acc, r) => acc + (r.categoryRatings?.parking ?? r.stars), 0);
+  const bookingSum = ratings.reduce((acc, r) => acc + (r.categoryRatings?.booking ?? r.stars), 0);
+  const waitingSum = ratings.reduce((acc, r) => acc + (r.categoryRatings?.waiting ?? r.stars), 0);
+  const serviceSum = ratings.reduce((acc, r) => acc + (r.categoryRatings?.service ?? r.stars), 0);
+  const paymentSum = ratings.reduce((acc, r) => acc + (r.categoryRatings?.payment ?? r.stars), 0);
+
+  return {
+    averageRating: avg,
+    totalRatings: total,
+    satisfactionRate,
+    starsCount,
+    categoryAverages: {
+      parking: Number((parkingSum / total).toFixed(1)),
+      booking: Number((bookingSum / total).toFixed(1)),
+      waiting: Number((waitingSum / total).toFixed(1)),
+      service: Number((serviceSum / total).toFixed(1)),
+      payment: Number((paymentSum / total).toFixed(1)),
+    },
+  };
+}
+
